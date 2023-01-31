@@ -1,0 +1,18 @@
+version: '3.3'
+
+services:
+  spl-token-lending-api:
+    image: spl-token-lending-api:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+      target: runtime
+
+  solana-cli:
+    image: spl-token-lending-api/solana:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.solana
+    entrypoint: solana
+    command: [ ]
+
