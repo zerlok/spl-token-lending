@@ -1,0 +1,52 @@
+[tool.poetry]
+name = "spl-token-lending"
+version = "0.1.0"
+description = ""
+authors = ["Danil Trohnev <danil.troshnev@gmail.com>"]
+readme = "README.md"
+packages = [{ include = "spl_token_lending" }]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+fastapi = "^0.89.1"
+uvicorn = "^0.20.0"
+
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.2.1"
+mypy = "^0.991"
+pytest-cov = "^4.0.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+
+[tool.mypy]
+files = [
+    "src",
+    "tests",
+]
+strict = true
+show_error_context = true
+show_column_numbers = true
+show_error_codes = true
+pretty = true
+
+
+[tool.pytest.ini_options]
+addopts = """--cov=src/ --cov-report term-missing --cov-branch"""
+console_output_style = "count"
+filterwarnings = ["ignore::DeprecationWarning"]
+testpaths = ["tests"]
+
+[tool.coverage.run]
+branch = true
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "@abc.abstractmethod",
+    "if __name__ == .__main__.:",
+]
+show_missing = true
