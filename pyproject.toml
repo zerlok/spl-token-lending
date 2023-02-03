@@ -10,12 +10,23 @@ packages = [{ include = "spl_token_lending" }]
 python = "^3.9"
 fastapi = "^0.89.1"
 uvicorn = "^0.20.0"
+solana = "^0.29.0"
+gino = "^1.0.1"
+alembic = "^1.9.2"
+pydantic = "^1.10.4"
+psycopg2-binary = "^2.9.5"
+dependency-injector = "^4.41.0"
+python-json-logger = "^2.0.4"
+wrapt = "^1.14.1"
 
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.2.1"
 mypy = "^0.991"
 pytest-cov = "^4.0.0"
+pytest-asyncio = "^0.20.3"
+pydantic = { version = "^1.10.4", extras = ["dotenv"] }
+sqlalchemy-stubs = "^0.4"
 
 [build-system]
 requires = ["poetry-core"]
@@ -33,15 +44,24 @@ show_column_numbers = true
 show_error_codes = true
 pretty = true
 
+[[tool.mypy.overrides]]
+module = [
+    "gino.*",
+    "pythonjsonlogger.*",
+    "wrapt.*",
+]
+ignore_missing_imports = true
+
 
 [tool.pytest.ini_options]
+testpaths = ["tests"]
 addopts = """--cov=src/ --cov-report term-missing --cov-branch"""
 console_output_style = "count"
-filterwarnings = ["ignore::DeprecationWarning"]
-testpaths = ["tests"]
+
 
 [tool.coverage.run]
 branch = true
+
 
 [tool.coverage.report]
 exclude_lines = [
