@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import typing as t
+from contextlib import asynccontextmanager, contextmanager
 
 import sqlalchemy as sa
 from dependency_injector import providers
@@ -32,17 +33,16 @@ def _create_config() -> Config:
 def _create_alembic_postgres_engine(config: Config) -> t.Iterator[sa.engine.Engine]:
     engine = sa.create_engine(config.postgres_dsn)
 
-    # TODO: maybe it's better to close engine after usage, check docs
-    yield engine
-
-
-async def _create_gino_postgres_engine(config: Config, gino: Gino) -> t.AsyncIterator[Gino]:
-    # engine = await create_engine(config.postgres_dsn)
-
-    async with gino.with_bind(config.postgres_dsn) as engine:
+    try:
         yield engine
 
-    # await engine.close()
+    finally:
+        engine.dispose()
+
+
+async def _create_gino_postgres_engine(config: Config, gino_meta: Gino) -> t.AsyncIterator[Gino]:
+    async with gino_meta.with_bind(config.postgres_dsn) as engine:
+        yield engine
 
 
 async def _create_solana_client(config: Config) -> t.AsyncIterator[AsyncClient]:
@@ -61,9 +61,9 @@ def _create_token_repository(config: Config, factory: TokenRepositoryFactory) ->
 class Container(DeclarativeContainer):
     config = providers.Singleton(_create_config)
 
+    db_metadata = providers.Object(t.cast(Gino, gino))  # type: ignore[var-annotated]
     alembic_engine = providers.Resource(_create_alembic_postgres_engine, config)
-    gino_metadata = providers.Object(t.cast(sa.MetaData, gino))
-    gino_engine = providers.Resource(_create_gino_postgres_engine, config, gino_metadata)
+    gino_engine = providers.Resource(_create_gino_postgres_engine, config, db_metadata)
 
     solana_client = providers.Resource(_create_solana_client, config)
 
@@ -74,23 +74,32 @@ class Container(DeclarativeContainer):
     user_lending_case = providers.Singleton(UserLendingCase, token_repository, loan_repository)
 
 
-def use_container_sync(func: t.Callable[..., T_co]) -> t.Callable[..., T_co]:
-    def wrapper(*args: object, **kwargs: object) -> T_co:
-        loop = asyncio.get_event_loop()
+@asynccontextmanager
+async def use_initialized_container(container: t.Optional[Container] = None) -> t.AsyncIterator[Container]:
+    container = container or Container()
 
-        container = Container()
+    await container.init_resources()  # type: ignore[misc]
+
+    try:
+        yield container
+
+    finally:
+        await container.shutdown_resources()  # type: ignore[misc]
+
+
+@contextmanager
+def use_initialized_container_sync(container: t.Optional[Container] = None) -> t.Iterator[Container]:
+    container = container or Container()
+
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(
+        container.init_resources(),  # type: ignore[arg-type]
+    )
+
+    try:
+        yield container
+
+    finally:
         loop.run_until_complete(
-            container.init_resources(),  # type: ignore[arg-type]
+            container.shutdown_resources(),  # type: ignore[arg-type]
         )
-
-        try:
-            res = func(container, *args, **kwargs)
-
-        finally:
-            loop.run_until_complete(
-                container.shutdown_resources(),  # type: ignore[arg-type]
-            )
-
-        return res
-
-    return wrapper

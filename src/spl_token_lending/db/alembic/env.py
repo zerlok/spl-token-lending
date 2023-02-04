@@ -5,7 +5,7 @@ from alembic.operations import MigrateOperation
 from alembic.runtime.migration import MigrationContext
 from alembic.script import ScriptDirectory
 
-from spl_token_lending.container import Container, use_container_sync
+from spl_token_lending.container import Container, use_initialized_container_sync
 from spl_token_lending.db.models import gino
 
 # this is the Alembic Config object, which provides
@@ -61,20 +61,21 @@ def run_migrations_offline() -> None:
     script output.
 
     """
-    url = config.get_main_option("sqlalchemy.url")
-    context.configure(
-        url=url,
-        target_metadata=target_metadata,
-        literal_binds=True,
-        dialect_opts={"paramstyle": "named"},
-    )
 
-    with context.begin_transaction():
-        context.run_migrations()
+    with use_initialized_container_sync() as container:  # type: Container
+        context.configure(
+            url=container.config().postgres_dsn,
+            target_metadata=target_metadata,
+            literal_binds=True,
+            dialect_opts={"paramstyle": "named"},
+            process_revision_directives=process_revision_directives,
+        )
+
+        with context.begin_transaction():
+            context.run_migrations()
 
 
-@use_container_sync
-def run_migrations_online(container: Container) -> None:
+def run_migrations_online() -> None:
     """Run migrations in 'online' mode.
 
     In this scenario we need to create an Engine
@@ -82,14 +83,16 @@ def run_migrations_online(container: Container) -> None:
 
     """
 
-    with container.alembic_engine().connect() as connection:
-        context.configure(
-            connection=connection, target_metadata=target_metadata,
-            process_revision_directives=process_revision_directives,
-        )
+    with use_initialized_container_sync() as container:  # type: Container
+        with container.alembic_engine().connect() as connection:
+            context.configure(
+                connection=connection,
+                target_metadata=target_metadata,
+                process_revision_directives=process_revision_directives,
+            )
 
-        with context.begin_transaction():
-            context.run_migrations()
+            with context.begin_transaction():
+                context.run_migrations()
 
 
 if context.is_offline_mode():

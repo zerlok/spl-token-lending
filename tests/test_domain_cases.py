@@ -14,6 +14,7 @@ from spl_token_lending.repository.token import TokenRepository
 
 @pytest.mark.slow
 @pytest.mark.asyncio
+@pytest.mark.usefixtures("clean_database")
 class TestUserLendingCase:
     @pytest_asyncio.fixture(scope="class")
     async def executor(self, container: Container) -> UserLendingCase:
