@@ -35,10 +35,10 @@ class UserLendingCase:
     ) -> InitializedUserLoanResult:
         token_available_amount = await self.__token_repository.get_account_amount(self.__token_repository.owner_pubkey)
         if token_available_amount is None:
-            return FailedUserLoan(f"failed to get token amount on source account")
+            return FailedUserLoan("failed to get token amount on source account")
 
         if amount > token_available_amount:
-            return FailedUserLoan(f"insufficient token amount on source account: {amount}")
+            return FailedUserLoan("insufficient token amount on source account")
 
         pending_loan = await self.__loan_repository.create(LoanItem.Status.PENDING, address, amount)
 
@@ -47,10 +47,10 @@ class UserLendingCase:
     async def submit(self, loan_id: LoanId, signature: Signature) -> SubmittedUserLoanResult:
         pending_loan = await self.__loan_repository.get_by_id(loan_id)
         if pending_loan is None:
-            return FailedUserLoan(f"loan was not found")
+            return FailedUserLoan("loan was not found")
 
         if not self.__validate_signature(pending_loan, signature):
-            return FailedUserLoan(f"provided signature is invalid")
+            return FailedUserLoan("provided signature is invalid")
 
         async with self.__loan_repository.use_transaction(pending_loan.id_) as tx:  # type: GinoTransaction
             active_loan = await self.__loan_repository.update_existing_by_id(
@@ -61,7 +61,7 @@ class UserLendingCase:
             if not ok:
                 tx.raise_rollback()
 
-        return SubmittedUserLoan(active_loan) if ok else FailedUserLoan(f"transfer process failed unexpectedly")
+        return SubmittedUserLoan(active_loan) if ok else FailedUserLoan("transfer process failed unexpectedly")
 
     def __validate_signature(self, loan: LoanItem, signature: Signature) -> bool:
         return signature.verify(loan.address, loan.id_.bytes)

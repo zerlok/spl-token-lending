@@ -16,20 +16,23 @@ class WalletRepositoryError(Exception):
 
 class WalletRepository:
 
-    def __init__(self, client: AsyncClient) -> None:
+    def __init__(self, client: AsyncClient, initial_amount: int) -> None:
         self.__client = client
+        self.__initial_amount = initial_amount
 
-    async def create(self, amount: int) -> Keypair:
+    async def create(self, amount: t.Optional[int] = None) -> Keypair:
         wallet = Keypair()
 
         await self.init_balance(wallet, amount)
 
         return wallet
 
-    async def init_balance(self, wallet: Keypair, amount: int) -> None:
-        _LOGGER.debug("requesting airdrop to wallet", extra={"amount": amount, "wallet": wallet})
+    async def init_balance(self, wallet: Keypair, amount: t.Optional[int] = None) -> None:
+        clean_amount = amount if amount is not None else self.__initial_amount
 
-        airdrop_resp = await self.__request_airdrop(wallet, amount)
+        _LOGGER.debug("requesting airdrop to wallet", extra={"amount": clean_amount, "wallet": wallet})
+
+        airdrop_resp = await self.__request_airdrop(wallet, clean_amount)
         if airdrop_resp is None:
             raise WalletRepositoryError("airdrop request failed", airdrop_resp, wallet)
 
@@ -39,10 +42,10 @@ class WalletRepository:
 
         if __debug__:
             resp = await self.__client.get_balance(wallet.pubkey())
-            assert resp.value == amount
+            assert resp.value == clean_amount
 
         _LOGGER.debug("airdrop requested to wallet", extra={
-            "amount": amount,
+            "amount": clean_amount,
             "wallet": wallet,
             "signature": airdrop_resp.value,
         })

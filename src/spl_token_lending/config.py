@@ -16,7 +16,10 @@ class Config(BaseSettings):
     logging_level: t.Union[int, str] = logging.INFO
     logging_json_enabled: bool = False
 
-    solana_endpoint: AnyUrl
     postgres_dsn: PostgresDsn
+
+    solana_endpoint: AnyUrl
+    solana_airdrop_amount: int = 1_000_000_000
+    solana_mint_amount: int = 1_000
 
     token_repository_config: t.Union[None, Path, TokenRepositoryConfig] = None

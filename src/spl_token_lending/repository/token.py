@@ -147,11 +147,10 @@ class TokenRepositoryInitializationError(Exception):
 
 
 class TokenRepositoryFactory:
-    def __init__(self, client: AsyncClient, airdrop_amount: int, mint_amount: int) -> None:
+    def __init__(self, client: AsyncClient, wallet_repository: WalletRepository, mint_amount: int) -> None:
         self.__client = client
-        self.__airdrop_amount = airdrop_amount
+        self.__wallet_repository = wallet_repository
         self.__mint_amount = mint_amount
-        self.__wallet_repository = WalletRepository(client)
 
     def create_from_config(self, config: TokenRepositoryConfig) -> TokenRepository:
         _LOGGER.debug("creating token repository from config", extra={"config": config.dict()})
@@ -179,8 +178,8 @@ class TokenRepositoryFactory:
         _LOGGER.info("creating new config for token repository", extra={"path": path})
         self.__check_path_writable(path)
 
-        wallet = await self.__wallet_repository.create(self.__airdrop_amount)
-        _LOGGER.info("new wallet initialized", extra={"wallet": wallet, "amount": self.__airdrop_amount})
+        wallet = await self.__wallet_repository.create()
+        _LOGGER.info("new wallet initialized", extra={"wallet": wallet})
 
         config = await self.__create_config_from_wallet(wallet)
         _LOGGER.debug("saving config", extra={"config": config.dict(), "path": path})

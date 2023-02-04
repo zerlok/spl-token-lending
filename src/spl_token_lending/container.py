@@ -15,11 +15,9 @@ from spl_token_lending.domain.cases import UserLendingCase
 from spl_token_lending.logging import setup_logging
 from spl_token_lending.repository.loan import LoanRepository
 from spl_token_lending.repository.token import TokenRepository, TokenRepositoryConfig, TokenRepositoryFactory
+from spl_token_lending.repository.wallet import WalletRepository
 
 _LOGGER = logging.getLogger(__name__)
-
-F = t.TypeVar("F", bound=t.Callable[..., object])
-T_co = t.TypeVar("T_co", covariant=True)
 
 
 def _create_config() -> Config:
@@ -67,7 +65,9 @@ class Container(DeclarativeContainer):
 
     solana_client = providers.Resource(_create_solana_client, config)
 
-    token_repository_factory = providers.Singleton(TokenRepositoryFactory, solana_client, 1_000_000_000, 1_000)
+    wallet_repository = providers.Singleton(WalletRepository, solana_client, config.provided.solana_airdrop_amount)
+    token_repository_factory = providers.Singleton(TokenRepositoryFactory, solana_client, wallet_repository,
+                                                   config.provided.solana_mint_amount)
     token_repository = providers.Singleton(_create_token_repository, config, token_repository_factory)
     loan_repository = providers.Singleton(LoanRepository, gino_engine)
 
