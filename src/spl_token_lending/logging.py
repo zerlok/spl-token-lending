@@ -5,7 +5,10 @@ import typing as t
 from pythonjsonlogger import jsonlogger
 
 
-def setup_logging(logging_level: t.Union[int, str], enable_json: bool) -> None:
+def setup_logging(
+        logging_level: t.Union[int, str],
+        enable_json: bool,
+) -> None:
     stdout_handler = logging.StreamHandler(sys.stdout)
 
     if enable_json:
@@ -20,6 +23,11 @@ def setup_logging(logging_level: t.Union[int, str], enable_json: bool) -> None:
             timestamp=True,
         ))
 
+    clean_logging_level = (
+        logging.getLevelName(logging_level.strip().upper())
+        if isinstance(logging_level, str) else logging_level
+    )
+
     logging.basicConfig(
         format=_make_logging_format(
             "asctime",
@@ -28,7 +36,7 @@ def setup_logging(logging_level: t.Union[int, str], enable_json: bool) -> None:
             "message",
             sep=" :: ",
         ),
-        level=logging_level,
+        level=clean_logging_level,
         handlers=[stdout_handler],
     )
 

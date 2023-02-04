@@ -9,6 +9,7 @@ from subprocess import Popen
 import pytest
 import pytest_asyncio
 from _pytest.monkeypatch import MonkeyPatch
+from asyncpg import PostgresError
 from dependency_injector import providers
 from pydantic import PostgresDsn
 
@@ -16,7 +17,6 @@ from spl_token_lending.config import Config
 from spl_token_lending.container import Container, use_initialized_container
 from spl_token_lending.db.models import gino
 from spl_token_lending.repository.iterable import iter_with_exp_delay
-from spl_token_lending.repository.token import TokenRepository, TokenRepositoryFactory
 
 PROJECT_DIR = Path(__file__).parent.parent
 
@@ -45,7 +45,6 @@ def monkeypatch() -> t.Iterator[MonkeyPatch]:
 
 @pytest.fixture(scope="session")
 def config(monkeypatch: MonkeyPatch) -> Config:
-    monkeypatch.setenv("TOKEN_REPOSITORY_CONFIG", str(PROJECT_DIR / "tests" / "data" / "test-token.json"))
     monkeypatch.setenv("LOGGING_LEVEL", str(logging.DEBUG))
     monkeypatch.setenv("LOGGING_JSON_ENABLED", "no")
     monkeypatch.setenv("SOLANA_ENDPOINT", "https://api.devnet.solana.com")
@@ -87,10 +86,11 @@ async def docker_postgres_service(
         docker_compose: t.Callable[[t.Sequence[str]], int],
 ) -> t.AsyncIterator[PostgresDsn]:
     code = docker_compose(["up", "-d", "postgres"])
-    assert code == 0
+    if code != 0:
+        raise RuntimeError("failed to start postgres in docker compose")
 
     async for _ in iter_with_exp_delay():
-        with suppress(ConnectionError):
+        with suppress(ConnectionError, PostgresError):
             async with gino.with_bind(config.postgres_dsn) as engine:
                 assert (await engine.scalar("SELECT 1")) == 1
                 break
@@ -109,16 +109,7 @@ async def docker_postgres_service(
 async def container(config: Config, docker_postgres_service: PostgresDsn) -> t.AsyncIterator[Container]:
     c = Container()
 
-    # TODO: think about refilling the initial amount of tokens during the test start - it will make tests more
-    #  reproducible
-    async def create_token_repository(config: Config, factory: TokenRepositoryFactory) -> TokenRepository:
-        if not isinstance(config.token_repository_config, Path):
-            raise TypeError("a path to token repository is required")
-
-        return await factory.create_from_path(config.token_repository_config)
-
     c.config.override(providers.Object(config))
-    c.token_repository.override(providers.Singleton(create_token_repository, c.config, c.token_repository_factory))
 
     async with use_initialized_container(c):
         yield c
@@ -126,8 +117,13 @@ async def container(config: Config, docker_postgres_service: PostgresDsn) -> t.A
 
 @pytest.fixture(scope="session")
 def migrated_database(docker_postgres_service: PostgresDsn, popen: t.Callable[[t.Sequence[str]], int]) -> None:
-    assert popen(["alembic", "downgrade", "base"]) == 0
-    assert popen(["alembic", "upgrade", "head"]) == 0
+    code = popen(["alembic", "downgrade", "base"])
+    if code != 0:
+        raise RuntimeError("failed to run alembic downgrade")
+
+    code = popen(["alembic", "upgrade", "head"])
+    if code != 0:
+        raise RuntimeError("failed to run alembic upgrade")
 
 
 @pytest_asyncio.fixture()

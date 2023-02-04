@@ -46,6 +46,7 @@ pretty = true
 
 [[tool.mypy.overrides]]
 module = [
+    "asyncpg.*",
     "gino.*",
     "pythonjsonlogger.*",
     "wrapt.*",
@@ -55,7 +56,16 @@ ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = """--cov=src/ --cov-report term-missing --cov-branch"""
+addopts = [
+    "--strict-markers",
+    "--cov=src/",
+    "--cov-report=term-missing",
+    "--cov-branch",
+]
+markers = [
+    "asyncio: test asyncio",
+    "slow: test execution is slow",
+]
 console_output_style = "count"
 
 
@@ -70,3 +80,7 @@ exclude_lines = [
     "if __name__ == .__main__.:",
 ]
 show_missing = true
+
+
+[tool.coverage.html]
+directory = "htmlcov/"

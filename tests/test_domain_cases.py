@@ -12,6 +12,8 @@ from spl_token_lending.repository.data import Amount
 from spl_token_lending.repository.token import TokenRepository
 
 
+# TODO: think about refilling the initial amount of tokens during the test start - it will make tests more
+#  reproducible
 @pytest.mark.slow
 @pytest.mark.asyncio
 @pytest.mark.usefixtures("clean_database")

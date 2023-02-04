@@ -16,6 +16,7 @@ from spl.token.instructions import get_associated_token_address
 from spl_token_lending.repository.data import Amount
 from spl_token_lending.repository.iterable import wait_for_signature_status
 from spl_token_lending.repository.wallet import WalletRepository
+from spl_token_lending.serializable import KeyPairObject, PublicKeyObject
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -130,16 +131,18 @@ class TokenRepositoryConfig(BaseModel):
             Keypair: str,
         }
 
+    # FIXME: can't use classes from `serializable` module, because `TokenRepositoryConfig` can't be constructed with
+    #  such types.
     owner: Keypair
     token: Pubkey
 
-    @validator("token", pre=True)
-    def validate_pubkey(cls, value: t.Union[str, Pubkey]) -> Pubkey:
-        return Pubkey.from_string(value) if isinstance(value, str) else value
-
     @validator("owner", pre=True)
-    def validate_keypair(cls, value: t.Union[str, Keypair]) -> Keypair:
-        return Keypair.from_base58_string(value) if isinstance(value, str) else value
+    def validate_owner(cls, value: object) -> Keypair:
+        return KeyPairObject.validate(value)
+
+    @validator("token", pre=True)
+    def validate_token(cls, value: object) -> Pubkey:
+        return PublicKeyObject.validate(value)
 
 
 class TokenRepositoryInitializationError(Exception):
@@ -233,5 +236,6 @@ class TokenRepositoryFactory:
             f.write(config.json(by_alias=True))
 
     def __check_path_writable(self, path: Path) -> None:
+        path.parent.mkdir(parents=True, exist_ok=True)
         path.touch(mode=0o600, exist_ok=False)
         path.unlink(missing_ok=False)

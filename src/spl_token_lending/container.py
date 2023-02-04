@@ -11,7 +11,7 @@ from solana.rpc.async_api import AsyncClient
 
 from spl_token_lending.config import Config
 from spl_token_lending.db.models import gino
-from spl_token_lending.domain.cases import UserLendingCase
+from spl_token_lending.domain.cases import UserLendingCase, ViewLoansCase
 from spl_token_lending.logging import setup_logging
 from spl_token_lending.repository.loan import LoanRepository
 from spl_token_lending.repository.token import TokenRepository, TokenRepositoryConfig, TokenRepositoryFactory
@@ -45,7 +45,6 @@ async def _create_gino_postgres_engine(config: Config, gino_meta: Gino) -> t.Asy
 
 async def _create_solana_client(config: Config) -> t.AsyncIterator[AsyncClient]:
     async with AsyncClient(config.solana_endpoint) as client:
-        # yield wrap_with_rate_limiter(client, 1.0, 128)
         yield client
 
 
@@ -72,6 +71,7 @@ class Container(DeclarativeContainer):
     loan_repository = providers.Singleton(LoanRepository, gino_engine)
 
     user_lending_case = providers.Singleton(UserLendingCase, token_repository, loan_repository)
+    view_loans_case = providers.Singleton(ViewLoansCase, loan_repository)
 
 
 @asynccontextmanager

@@ -175,5 +175,5 @@ poetry.toml
 .local/
 docker-compose.override.yml
 
-# Test data that must be secure
-tests/data/test-token.json
+# Test secrets that must be secure
+tests/secrets/
