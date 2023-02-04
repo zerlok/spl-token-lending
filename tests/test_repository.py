@@ -6,7 +6,7 @@ from _pytest.fixtures import SubRequest
 from solders.pubkey import Pubkey
 
 from spl_token_lending.container import Container
-from spl_token_lending.repository.data import Amount, LoanItem, PaginationOptions
+from spl_token_lending.repository.data import Amount, LoanFilterOptions, LoanItem, PaginationOptions
 from spl_token_lending.repository.loan import LoanRepository
 
 
@@ -30,34 +30,34 @@ class TestLoanRepository:
     async def created_loan(self, repo: LoanRepository, request: SubRequest) -> LoanItem:
         return await repo.create(*request.param)
 
-    @pytest.mark.parametrize("status,address,amount", ITEM_VALUES)
+    @pytest.mark.parametrize("status,wallet,amount", ITEM_VALUES)
     async def test_created_has_appropriate_values(
             self,
             repo: LoanRepository,
             status: LoanItem.Status,
-            address: Pubkey,
+            wallet: Pubkey,
             amount: Amount,
     ) -> None:
-        created_item = await repo.create(status, address, amount)
+        created_item = await repo.create(status, wallet, amount)
 
         assert created_item == LoanItem(
             id_=created_item.id_,
             status=status,
-            address=address,
+            wallet=wallet,
             amount=amount,
         )
 
-    @pytest.mark.parametrize("status,address,amount", ITEM_VALUES)
+    @pytest.mark.parametrize("status,wallet,amount", ITEM_VALUES)
     async def test_loan_count_increases_after_creation(
             self,
             repo: LoanRepository,
             created_loan: LoanItem,
             status: LoanItem.Status,
-            address: Pubkey,
+            wallet: Pubkey,
             amount: Amount,
     ) -> None:
         count_before = await repo.count()
-        await repo.create(status, address, amount)
+        await repo.create(status, wallet, amount)
         count_after = await repo.count()
 
         assert count_after == count_before + 1
@@ -71,8 +71,8 @@ class TestLoanRepository:
 
         assert retrieved_item == created_loan
 
-    async def test_created_can_by_found_by_address(self, repo: LoanRepository, created_loan: LoanItem) -> None:
-        found_items = await repo.find_by_address(created_loan.address, PaginationOptions())
+    async def test_created_can_by_found_by_wallet(self, repo: LoanRepository, created_loan: LoanItem) -> None:
+        found_items = await repo.find(LoanFilterOptions(wallet_equals=created_loan.wallet), PaginationOptions())
 
         assert found_items == [created_loan, ]
 

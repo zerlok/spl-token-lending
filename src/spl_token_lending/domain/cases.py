@@ -1,3 +1,4 @@
+import typing as t
 from dataclasses import replace
 
 from gino.transaction import GinoTransaction
@@ -9,7 +10,7 @@ from spl_token_lending.domain.data import (
     ItemsView,
     SubmittedUserLoan, SubmittedUserLoanResult,
 )
-from spl_token_lending.repository.data import Amount, LoanId, LoanItem, PaginationOptions
+from spl_token_lending.repository.data import Amount, LoanFilterOptions, LoanId, LoanItem, PaginationOptions
 from spl_token_lending.repository.loan import LoanRepository
 from spl_token_lending.repository.token import TokenRepository
 
@@ -30,7 +31,7 @@ class UserLendingCase:
     # TODO: support different token - create token repository for a provided token with appropriate owner from DB.
     async def initialize(
             self,
-            address: Pubkey,
+            wallet: Pubkey,
             amount: Amount,
     ) -> InitializedUserLoanResult:
         token_available_amount = await self.__token_repository.get_account_amount(self.__token_repository.owner_pubkey)
@@ -40,7 +41,7 @@ class UserLendingCase:
         if amount > token_available_amount:
             return FailedUserLoan("insufficient token amount on source account")
 
-        pending_loan = await self.__loan_repository.create(LoanItem.Status.PENDING, address, amount)
+        pending_loan = await self.__loan_repository.create(LoanItem.Status.PENDING, wallet, amount)
 
         return InitializedUserLoan(pending_loan)
 
@@ -57,48 +58,35 @@ class UserLendingCase:
                 item=replace(pending_loan, status=LoanItem.Status.ACTIVE),
             )
 
-            ok = await self.__token_repository.transfer(active_loan.address, active_loan.amount)
+            ok = await self.__token_repository.transfer(active_loan.wallet, active_loan.amount)
             if not ok:
                 tx.raise_rollback()
 
         return SubmittedUserLoan(active_loan) if ok else FailedUserLoan("transfer process failed unexpectedly")
 
     def __validate_signature(self, loan: LoanItem, signature: Signature) -> bool:
-        return signature.verify(loan.address, loan.id_.bytes)
+        return signature.verify(loan.wallet, loan.id_.bytes)
 
 
-class ViewUserLoansCase:
-
-    def __init__(self, loan_repository: LoanRepository) -> None:
-        self.__loan_repository = loan_repository
-
-    async def perform(self, key: Pubkey, pagination: PaginationOptions) -> ItemsView[LoanItem]:
-        total = await self.__loan_repository.count_by_address(key)
-        loans = await self.__loan_repository.find_by_address(key, pagination)
-
-        return ItemsView(
-            info=ItemsView.Info(
-                offset=pagination.offset,
-                limit=pagination.limit,
-                total=total,
-            ),
-            items=loans,
-        )
-
-
-class ViewAllLoansCase:
+class ViewLoansCase:
 
     def __init__(self, loan_repository: LoanRepository) -> None:
         self.__loan_repository = loan_repository
 
-    async def perform(self, pagination: PaginationOptions) -> ItemsView[LoanItem]:
-        total = await self.__loan_repository.count()
-        loans = await self.__loan_repository.find(pagination)
+    async def perform(
+            self,
+            filter_: t.Optional[LoanFilterOptions] = None,
+            pagination: t.Optional[PaginationOptions] = None,
+    ) -> ItemsView[LoanItem]:
+        clean_pagination = pagination if pagination is not None else PaginationOptions()
+
+        total = await self.__loan_repository.count(filter_)
+        loans = await self.__loan_repository.find(filter_, clean_pagination)
 
         return ItemsView(
             info=ItemsView.Info(
-                offset=pagination.offset,
-                limit=pagination.limit,
+                offset=clean_pagination.offset,
+                limit=clean_pagination.limit,
                 total=total,
             ),
             items=loans,
