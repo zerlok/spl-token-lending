@@ -21,7 +21,7 @@ def upgrade() -> None:
     op.create_table('loan',
                     sa.Column('id', postgresql.UUID(), server_default=sa.text('uuid_generate_v4()'), nullable=False),
                     sa.Column('status', sa.Enum('PENDING', 'ACTIVE', 'CLOSED', name='status'), nullable=False),
-                    sa.Column('address', sa.String(), nullable=False),
+                    sa.Column('wallet', sa.String(), nullable=False),
                     sa.Column('amount', sa.Integer(), nullable=False),
                     sa.PrimaryKeyConstraint('id')
                     )

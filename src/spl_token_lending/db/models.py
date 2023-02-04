@@ -12,5 +12,5 @@ class LoanModel(gino.Model):  # type: ignore[name-defined,misc]
 
     id = sa.Column(pg.UUID(), primary_key=True, server_default=sa.text("uuid_generate_v4()"))
     status = sa.Column(sa.Enum(LoanItem.Status), nullable=False)
-    address = sa.Column(sa.String(), nullable=False)
+    wallet = sa.Column(sa.String(), nullable=False)
     amount = sa.Column(sa.Integer(), nullable=False)

@@ -24,5 +24,12 @@ class LoanItem:
 
     id_: LoanId
     status: Status
-    address: Pubkey
+    wallet: Pubkey
     amount: Amount
+
+
+@dataclass(frozen=True)
+class LoanFilterOptions:
+    id_equals: t.Optional[LoanId] = None
+    status_equals: t.Optional[LoanItem.Status] = None
+    wallet_equals: t.Optional[Pubkey] = None
