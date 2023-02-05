@@ -1,3 +1,6 @@
+"""Module provides serializers for Keypair, Pubkey and Signature classes, so it can be easily read/written from/to
+json/text/file etc."""
+
 import typing as t
 
 from pydantic.fields import ModelField

@@ -1,3 +1,5 @@
+"""Module defines FastAPI application for running spl-token-lending backend service."""
+
 from fastapi import FastAPI, status
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response

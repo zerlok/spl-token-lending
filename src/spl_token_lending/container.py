@@ -1,3 +1,5 @@
+"""Module provides DI container and can be used by different frameworks to set up the application."""
+
 import asyncio
 import logging
 import typing as t
@@ -53,6 +55,11 @@ async def _create_token_repository(config: Config, factory: TokenRepositoryFacto
 
 
 class Container(DeclarativeContainer):
+    """Assembles domain and repository project packages.
+
+    Providers can be easily overriden which simplifies tests.
+    """
+
     config = providers.Singleton(_create_config)
 
     db_metadata = providers.Object(t.cast(Gino, gino))  # type: ignore[var-annotated]

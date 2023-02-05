@@ -7,6 +7,8 @@ from pydantic import AnyUrl, BaseSettings, PostgresDsn
 
 
 class Config(BaseSettings):
+    """Application configuration. During object instantiation pydantic reads env variables and secret files on disk."""
+
     class Config:
         env_file = os.getenv("CONFIG_ENV_FILE", None)
         secrets_dir = os.getenv("CONFIG_SECRETS_DIR", None)
@@ -21,3 +23,5 @@ class Config(BaseSettings):
     solana_mint_amount: int = 1_000
 
     token_repository_config_path: Path
+    """A path to a config on a disk with :class:`spl_token_lending.repository.token.TokenRepositoryConfig` structure, 
+    see :class:`spl_token_lending.repository.token.TokenRepositoryFactory`"""

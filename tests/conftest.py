@@ -56,6 +56,8 @@ def config(monkeypatch: MonkeyPatch) -> Config:
 
 @pytest.fixture(scope="session")
 def popen() -> t.Callable[[t.Sequence[str]], int]:
+    """Run subprocess from project root dir and environment variables from test process."""
+
     def execute(args: t.Sequence[str]) -> int:
         with Popen(args=args, cwd=PROJECT_DIR, env=os.environ) as p:
             return p.wait()
@@ -68,6 +70,8 @@ def docker_compose(
         config: Config,
         popen: t.Callable[[t.Sequence[str]], int],
 ) -> t.Iterator[t.Callable[[t.Sequence[str]], int]]:
+    """Run docker compose commands."""
+
     base_args = ["docker-compose", "-p", f"pytest-{os.getpid()}", ]
 
     def execute(args: t.Sequence[str]) -> int:
@@ -85,10 +89,13 @@ async def docker_postgres_service(
         config: Config,
         docker_compose: t.Callable[[t.Sequence[str]], int],
 ) -> t.AsyncIterator[PostgresDsn]:
+    """Start postgres via docker compose for integration tests."""
+
     code = docker_compose(["up", "-d", "postgres"])
     if code != 0:
         raise RuntimeError("failed to start postgres in docker compose")
 
+    # Wait for postgres is ready
     async for _ in iter_with_exp_delay():
         with suppress(ConnectionError, PostgresError):
             async with gino.with_bind(config.postgres_dsn) as engine:
@@ -107,6 +114,8 @@ async def docker_postgres_service(
 
 @pytest_asyncio.fixture(scope="session")
 async def container(config: Config, docker_postgres_service: PostgresDsn) -> t.AsyncIterator[Container]:
+    """Setup dependency injector container with test configuration."""
+
     c = Container()
 
     c.config.override(providers.Object(config))
@@ -117,6 +126,8 @@ async def container(config: Config, docker_postgres_service: PostgresDsn) -> t.A
 
 @pytest.fixture(scope="session")
 def migrated_database(docker_postgres_service: PostgresDsn, popen: t.Callable[[t.Sequence[str]], int]) -> None:
+    """Run postgres migrations."""
+
     code = popen(["alembic", "downgrade", "base"])
     if code != 0:
         raise RuntimeError("failed to run alembic downgrade")
@@ -128,6 +139,9 @@ def migrated_database(docker_postgres_service: PostgresDsn, popen: t.Callable[[t
 
 @pytest_asyncio.fixture()
 async def clean_database(container: Container, migrated_database: object) -> None:
+    """Clean tables in postgres. This method isolates execution of DB tests and allows to look at DB data if test
+    fails."""
+
     db = container.db_metadata()
     await db.gino.drop_all()
     await db.gino.create_all()

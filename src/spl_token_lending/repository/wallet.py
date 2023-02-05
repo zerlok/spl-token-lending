@@ -15,6 +15,7 @@ class WalletRepositoryError(Exception):
 
 
 class WalletRepository:
+    """Provides operations with wallets in solana system."""
 
     def __init__(self, client: AsyncClient, initial_amount: int) -> None:
         self.__client = client

@@ -20,9 +20,8 @@ from spl_token_lending.repository.token import TokenRepository
 # TODO: think about loan amount reduce when client returns the token back to owner's account, also close loan when
 #  the whole amount was returned.
 class UserLendingCase:
-    """
-    User can request a token amount to be lent over by the server and receive the requested amount on his solana wallet.
-    """
+    """User can request a token amount to be lent over by the server and receive the requested amount on his solana
+    wallet."""
 
     def __init__(self, token_repository: TokenRepository, loan_repository: LoanRepository) -> None:
         self.__token_repository = token_repository
@@ -69,6 +68,10 @@ class UserLendingCase:
 
 
 class ViewLoansCase:
+    """
+    User can view his outstanding debt (wallet address, amount, token address)
+    User can view all outstanding debts (wallet address, amount, token address)
+    """
 
     def __init__(self, loan_repository: LoanRepository) -> None:
         self.__loan_repository = loan_repository

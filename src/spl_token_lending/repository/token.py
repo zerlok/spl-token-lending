@@ -26,6 +26,7 @@ class TokenRepositoryError(Exception):
 
 
 class TokenRepository:
+    """Provides operations with tokens in solana system."""
 
     def __init__(self, client: AsyncClient, token: Pubkey, owner: Keypair) -> None:
         self.__client = client
@@ -124,6 +125,8 @@ class TokenRepository:
 
 
 class TokenRepositoryConfig(BaseModel):
+    """Stores necessary information to perform token transferring operations."""
+
     class Config:
         arbitrary_types_allowed = True
         json_encoders = {
@@ -150,6 +153,9 @@ class TokenRepositoryInitializationError(Exception):
 
 
 class TokenRepositoryFactory:
+    """Creates :class:`TokenRepository` instances from different things, such as :class:`TokenRepositoryConfig`,
+    :class:`Path` - a system path to a file with a config, etc."""
+
     def __init__(self, client: AsyncClient, wallet_repository: WalletRepository, mint_amount: int) -> None:
         self.__client = client
         self.__wallet_repository = wallet_repository
@@ -221,6 +227,10 @@ class TokenRepositoryFactory:
             "amount": self.__mint_amount,
             "signature": mint_resp.value
         })
+
+        ok = await wait_for_signature_status(self.__client, mint_resp.value)
+        if not ok:
+            raise TokenRepositoryInitializationError("token mint process failed", mint_resp)
 
         config = TokenRepositoryConfig(
             owner=wallet,

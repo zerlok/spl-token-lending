@@ -20,6 +20,11 @@ async def request_loan(
         executor: UserLendingCase = Depends(get_user_lending_case),
         data: LoanRequestObject = Body(),
 ) -> LoanItem:
+    """Initialize user token loan for provided wallet and for a specified amount.
+
+    Initialized loan should be submitted by user with a signature for tokens to be transferred.
+    """
+
     result = await executor.initialize(data.wallet, data.amount)
     if not isinstance(result, InitializedUserLoan):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=result.error)
@@ -33,6 +38,12 @@ async def submit_loan(
         loan_id: LoanId = Path(),
         data: LoanSubmitObject = Body(),
 ) -> LoanItem:
+    """Submits the loan and transfers appropriate token amount to user associated token account.
+
+    User must provide a signature by performing message sign: user must sign a loan id with hist own keypair and send
+    the result to this handler.
+    """
+
     result = await executor.submit(loan_id, data.signature)
     if not isinstance(result, SubmittedUserLoan):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=result.error)
@@ -46,4 +57,6 @@ async def view_loans(
         filter_: t.Optional[LoanFilterOptions] = Depends(get_loan_filter_options),
         pagination: PaginationOptions = Depends(get_pagination_options),
 ) -> ItemsView[LoanItem]:
+    """Views all known loans with specified filter and pagination options."""
+
     return await executor.perform(filter_, pagination)

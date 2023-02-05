@@ -13,6 +13,8 @@ from spl_token_lending.repository.data import Amount, LoanFilterOptions, LoanId,
 
 
 class LoanRepository:
+    """Provides operations with loans, stores data in database via gino."""
+
     __SELECT_COUNT = sa.select([sa.func.count()]).select_from(LoanModel)  # type:ignore[arg-type]
     __SELECT_ITEMS = sa.select(LoanModel).select_from(LoanModel)  # type:ignore[arg-type]
     __SELECT_ITEMS_ORDERED = __SELECT_ITEMS.order_by(LoanModel.id)
@@ -35,6 +37,7 @@ class LoanRepository:
 
     async def count(self, filter_: t.Optional[LoanFilterOptions] = None) -> int:
         query = self.__append_filter(self.__SELECT_COUNT, filter_)
+
         return await self.__gino.scalar(query)  # type: ignore[no-any-return]
 
     async def find(
