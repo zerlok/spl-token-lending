@@ -1,6 +1,0 @@
-ARG SOLANA_VERSION=v1.14.13
-
-FROM solanalabs/solana:${SOLANA_VERSION}
-
-RUN apt-get update \
-    && apt-get install -y ca-certificates make

@@ -1,1 +1,13 @@
+.venv/
+.local/
+.mypy_cache/
+.pytest_cache/
+htmlcov/
+__pycache__/
 .gitignore
+.github/
+.env
+.coverage
+docker-compose.yml
+docker-compose.override.yml
+README.md
