@@ -41,9 +41,9 @@ COPY tests/ tests/
 
 FROM ${BASE_IMAGE} AS runtime
 
-RUN mkdir -p /data/ \
+RUN mkdir -p /data/ /secrets/ \
     && adduser -DH app \
-    && chown app:app /data/ /srv/
+    && chown app:app /data/ /secrets/ /srv/
 USER app
 
 ARG PYTHON_VERSION
@@ -52,7 +52,7 @@ ENV PATH="/srv/.venv/bin/:${PATH}" \
     PYTHONPATH="/srv/src/:/srv/.venv/lib/python${PYTHON_VERSION}/site-packages/:${PYTHONPATH}" \
     PYTHONOPTIMIZE=1
 WORKDIR /srv/
-VOLUME /data/
+VOLUME ["/data/", "/secrets/"]
 EXPOSE 8000/tcp
 ENTRYPOINT ["python"]
 CMD ["-m", "spl_token_lending"]
