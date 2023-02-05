@@ -14,3 +14,12 @@ services:
       context: .
       dockerfile: Dockerfile
       target: runtime
+    environment:
+      LOGGING_LEVEL: debug
+      TOKEN_REPOSITORY_CONFIG_PATH: /secrets/token-repository-config.json
+      SOLANA_ENDPOINT: https://api.devnet.solana.com
+      POSTGRES_DSN: postgresql://${POSTGRES_USER:-spl-token-lending}:${POSTGRES_PASSWORD?postgres password is required}@postgres:5432/${POSTGRES_DB:-dev}
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres

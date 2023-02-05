@@ -1,10 +1,9 @@
 import logging
 import os
 import typing as t
+from pathlib import Path
 
 from pydantic import AnyUrl, BaseSettings, PostgresDsn
-
-from spl_token_lending.repository.token import TokenRepositoryConfig
 
 
 class Config(BaseSettings):
@@ -21,4 +20,4 @@ class Config(BaseSettings):
     solana_airdrop_amount: int = 1_000_000_000
     solana_mint_amount: int = 1_000
 
-    token_repository_config: TokenRepositoryConfig
+    token_repository_config_path: Path

@@ -14,7 +14,7 @@ from spl_token_lending.db.models import gino
 from spl_token_lending.domain.cases import UserLendingCase, ViewLoansCase
 from spl_token_lending.logging import setup_logging
 from spl_token_lending.repository.loan import LoanRepository
-from spl_token_lending.repository.token import TokenRepository, TokenRepositoryConfig, TokenRepositoryFactory
+from spl_token_lending.repository.token import TokenRepository, TokenRepositoryFactory
 from spl_token_lending.repository.wallet import WalletRepository
 
 _LOGGER = logging.getLogger(__name__)
@@ -48,11 +48,8 @@ async def _create_solana_client(config: Config) -> t.AsyncIterator[AsyncClient]:
         yield client
 
 
-def _create_token_repository(config: Config, factory: TokenRepositoryFactory) -> TokenRepository:
-    if not isinstance(config.token_repository_config, TokenRepositoryConfig):
-        raise TypeError("TokenRepositoryConfig is required for service run", config.token_repository_config)
-
-    return factory.create_from_config(config.token_repository_config)
+async def _create_token_repository(config: Config, factory: TokenRepositoryFactory) -> TokenRepository:
+    return await factory.create_from_path(config.token_repository_config_path)
 
 
 class Container(DeclarativeContainer):

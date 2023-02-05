@@ -28,6 +28,7 @@ WORKDIR /srv/
 COPY pyproject.toml poetry.lock ./
 RUN poetry install --no-root --only main
 
+COPY alembic.ini ./
 COPY src/ src/
 
 
@@ -48,13 +49,14 @@ USER app
 ARG PYTHON_VERSION
 
 ENV PATH="/srv/.venv/bin/:${PATH}" \
-    PYTHONPATH="/srv/.venv/lib/python${PYTHON_VERSION}/site-packages/:${PYTHONPATH}" \
-    PYTHONOPTIMIZE=2
+    PYTHONPATH="/srv/src/:/srv/.venv/lib/python${PYTHON_VERSION}/site-packages/:${PYTHONPATH}" \
+    PYTHONOPTIMIZE=1
 WORKDIR /srv/
 VOLUME /data/
-EXPOSE 8000
-ENTRYPOINT ["uvicorn"]
-CMD ["spl_token_lending.main:app", "--host", "0.0.0.0", "--port", "8000", "--log-level", "warning"]
+EXPOSE 8000/tcp
+ENTRYPOINT ["python"]
+CMD ["-m", "spl_token_lending"]
 
+COPY --from=build /srv/alembic.ini /srv/alembic.ini
 COPY --from=build /srv/.venv/ /srv/.venv/
 COPY --from=build /srv/src/ /srv/src/

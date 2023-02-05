@@ -26,7 +26,7 @@ class TestUserLendingCase:
 
     @pytest_asyncio.fixture(scope="class")
     async def token_repo(self, container: Container) -> TokenRepository:
-        return await container.token_repository()  # type: ignore[no-any-return,misc]
+        return await container.token_repository()
 
     @pytest_asyncio.fixture()
     async def destination_wallet_keypair(self, container: Container) -> Keypair:
