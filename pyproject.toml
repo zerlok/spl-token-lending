@@ -17,7 +17,6 @@ pydantic = "^1.10.4"
 psycopg2-binary = "^2.9.5"
 dependency-injector = "^4.41.0"
 python-json-logger = "^2.0.4"
-wrapt = "^1.14.1"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -50,7 +49,6 @@ module = [
     "asyncpg.*",
     "gino.*",
     "pythonjsonlogger.*",
-    "wrapt.*",
 ]
 ignore_missing_imports = true
 
